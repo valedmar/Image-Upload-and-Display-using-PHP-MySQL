@@ -7,30 +7,50 @@ include("connect.php");
 if (isset($_POST["submit"])) {
 
   // Retrieve user input from the form
-  $name = $_POST["name"];
-  $description = $_POST["description"];
+  if ($_POST["name"] = '') {
+    $name = $_POST["name"];
+  } else {
+    $name = 'n/a';
+  }
+  // deleted the desc.
+  // $description = $_POST["description"];
 
-  // File upload handling
-  $photo = $_FILES['photo']['name'];          // Get the original name of the uploaded file
-  $temp_name = $_FILES['photo']['tmp_name'];  // Get the temporary name assigned to the file by the server
-  $folder = "uploads/";                       // Set the folder where uploaded files will be stored
+  $files = array_filter($_FILES['photo']['name']); //something like that to be used before processing files.
 
-  // Move the uploaded file from the temporary location to the specified folder
-  move_uploaded_file($temp_name, $folder . $photo);
+  // Count # of uploaded files in array
+  $total = count($_FILES['photo']['name']);
 
-  // Insert user data into the database
-  $sql = "INSERT INTO `user` (`name`, `description`, `photo`) VALUES ('$name', '$description', '$photo')";
-  $result = mysqli_query($conn, $sql);
+  // Loop through each file
+  for( $i=0 ; $i < $total ; $i++ ) {
+
+    //Get the temp file path
+    $tmpFilePath = $_FILES['photo']['tmp_name'][$i];
+
+    //Make sure we have a file path
+    if ($tmpFilePath != ""){
+      //Setup our new file path
+      $newName = rand(10000, 99999).'-'. $_FILES['photo']['name'][$i];
+      $newFilePath = "./uploads/" . $newName;
+
+      //Upload the file into the temp dir
+      if(move_uploaded_file($tmpFilePath, $newFilePath)) {
+          // Insert user data into the database
+          $sql = "INSERT INTO `user` (`name`, `amount`, `photo`) VALUES ('$name', '1', '$newName')";
+          $result = mysqli_query($conn, $sql);
+      }
+    }
+  }
+
+
+
 
   // Check if the database insertion was successful
   if ($result) {
     // Redirect to a page displaying user details upon success
-    header("location: displayUserDetails.php");
+    header("location: index.php");
+    
   } else {
     // Print an error message if the database insertion fails
     echo "Error: " . mysqli_error($conn);
   }
 }
-
-// You can also write the above code in index.php
-// Just remove action="handleInput.php" and give it blank like action=""
